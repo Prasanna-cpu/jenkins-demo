@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $deployDir = "C:\jenkins-deploy"
-$jarName = "jenkins-maven-demo-1.0.0.jar"
+$jarName = "jenkins-demo-0.0.1-SNAPSHOT.jar"
 $sourceJar = Join-Path $PWD "target\$jarName"
 $destinationJar = Join-Path $deployDir $jarName
 
