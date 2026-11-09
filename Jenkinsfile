@@ -1,3 +1,4 @@
+
 pipeline {
 
     agent any
@@ -9,6 +10,7 @@ pipeline {
 
     stages {
 
+        // 1. Checkout source code
         stage('Checkout') {
             steps {
                 echo 'Fetching source code from GitHub...'
@@ -16,6 +18,7 @@ pipeline {
             }
         }
 
+        // 2. Compile Java application
         stage('Build') {
             steps {
                 echo 'Building Java application using Maven...'
@@ -23,6 +26,7 @@ pipeline {
             }
         }
 
+        // 3. Execute unit tests
         stage('Test') {
             steps {
                 echo 'Executing JUnit tests...'
@@ -30,9 +34,11 @@ pipeline {
             }
         }
 
+        // 4. Package application into JAR
         stage('Package') {
             steps {
                 echo 'Packaging application into JAR...'
+
                 bat 'mvn -B package -DskipTests'
 
                 archiveArtifacts(
@@ -42,50 +48,31 @@ pipeline {
             }
         }
 
+        // 5. Deploy application
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
 
                 bat '''
-                powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy.ps1
+                powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%WORKSPACE%\\deploy.ps1"
                 '''
             }
         }
 
+        // 6. Verify deployed application
         stage('Smoke Test') {
             steps {
                 echo 'Verifying deployed application...'
 
                 bat '''
-                powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                    $response = $null
-
-                    for ($i = 0; $i -lt 15; $i++) {
-                        try {
-                            $response = Invoke-RestMethod `
-                                -Uri 'http://localhost:8080/health' `
-                                -TimeoutSec 3
-
-                            break
-                        }
-                        catch {
-                            Start-Sleep -Seconds 2
-                        }
-                    }
-
-                    if ($response.status -ne 'UP') {
-                        throw 'Application health check failed!'
-                    }
-
-                    Write-Host 'Application is healthy!'
-                    Write-Host $response
-                "
+                powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%WORKSPACE%\\smoke-test.ps1"
                 '''
             }
         }
     }
 
     post {
+
         success {
             echo 'BUILD AND DEPLOYMENT SUCCESSFUL!'
         }
